@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Legend, LineChart, Line, AreaChart, Area,
 } from 'recharts';
 import ChartCard from './ChartCard';
-import { getCalendarPdfUrl } from '../utils/calendarUrls';
+import SourceCalendarBanner from './SourceCalendarBanner';
+import { makeChartClickHandler } from '../utils/chartHelpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -18,15 +19,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         </p>
       ))}
       {year >= 1963 && year <= 1978 && (
-        <a
-          href={getCalendarPdfUrl(year)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-1.5 text-xs text-uw-gold-dark hover:underline"
-          onClick={e => e.stopPropagation()}
-        >
-          View source calendar →
-        </a>
+        <p className="mt-1.5 text-xs text-uw-gray-400 italic">Click for source calendar</p>
       )}
     </div>
   );
@@ -40,6 +33,8 @@ const RANK_COLORS = {
 };
 
 export default function RankProgression({ data }) {
+  const [pinnedData, setPinnedData] = useState(null);
+
   // Rank distribution over time (as percentage)
   const rankPctByYear = useMemo(() => {
     return data.rankDistByYear.map(d => {
@@ -133,8 +128,24 @@ export default function RankProgression({ data }) {
     }));
   }, [data]);
 
+  const handleRankPctClick = useCallback(
+    (d) => makeChartClickHandler(rankPctByYear, [
+      { key: 'Professor', name: 'Professor', color: '#1a1a1a' },
+      { key: 'Associate Professor', name: 'Associate Professor', color: '#FFD54F' },
+      { key: 'Assistant Professor', name: 'Assistant Professor', color: '#FFC107' },
+      { key: 'Lecturer', name: 'Lecturer', color: '#9e9e9e' },
+    ], setPinnedData)(d),
+    [rankPctByYear]
+  );
+  const handlePromotionsClick = useCallback(
+    (d) => makeChartClickHandler(promotionsByYear, [{ key: 'promotions', name: 'Promotions', color: '#FFD54F' }], setPinnedData)(d),
+    [promotionsByYear]
+  );
+
   return (
     <div className="space-y-6 mt-6">
+      <SourceCalendarBanner data={pinnedData} onClose={() => setPinnedData(null)} />
+
       {/* Summary stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-uw-gray-200 p-5 text-center">
@@ -163,7 +174,7 @@ export default function RankProgression({ data }) {
           subtitle="Percentage of faculty at each rank"
         >
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={rankPctByYear}>
+            <AreaChart data={rankPctByYear} onClick={handleRankPctClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} unit="%" />
@@ -182,7 +193,7 @@ export default function RankProgression({ data }) {
           subtitle="Number of rank increases observed"
         >
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={promotionsByYear}>
+            <BarChart data={promotionsByYear} onClick={handlePromotionsClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
