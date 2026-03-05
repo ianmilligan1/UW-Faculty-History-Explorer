@@ -2,10 +2,6 @@
 
 An interactive dashboard exploring the growth and evolution of faculty at the University of Waterloo through data drawn from official university calendars.
 
-## Live Demo
-
-Visit the [GitHub Pages deployment](https://ianmilligan1.github.io/UW-Faculty-History-Explorer/) to explore the dashboard.
-
 ## Features
 
 - **Overview** — Key statistics, faculty growth trends, and rank distribution over 16 years
@@ -17,9 +13,17 @@ Visit the [GitHub Pages deployment](https://ianmilligan1.github.io/UW-Faculty-Hi
 
 ## Data
 
-The dataset (`fulldata.csv`) contains ~11,100 person-year entries extracted from University of Waterloo calendars spanning 1963–1978. Each row records a faculty member's name, department, rank, highest degree, degree-granting institution, and any administrative roles or notes for a given year.
+The dataset (`public/fulldata.csv`) contains ~11,100 person-year entries extracted from University of Waterloo calendars spanning 1963–1978. Each row records a faculty member's name, department, rank, highest degree, degree-granting institution, and any administrative roles or notes for a given year.
 
 The dashboard performs intelligent deduplication to handle name inconsistencies (e.g., initials varying across years), normalizes department renames, and parses administrative roles from free-text fields.
+
+## Tech Stack
+
+- [React](https://react.dev) with [Vite](https://vite.dev)
+- [Tailwind CSS](https://tailwindcss.com) v4
+- [Recharts](https://recharts.org) for data visualization
+- [PapaParse](https://www.papaparse.com) for CSV parsing
+- [Lucide React](https://lucide.dev) for icons
 
 ## Running Locally
 
@@ -34,18 +38,19 @@ The dev server will start at `http://localhost:5173`.
 ## Building for Production
 
 ```bash
-cd uw-faculty-dashboard
 npm run build
 ```
 
-## Tech Stack
-
-- [React](https://react.dev) with [Vite](https://vite.dev)
-- [Tailwind CSS](https://tailwindcss.com) v4
-- [Recharts](https://recharts.org) for data visualization
-- [PapaParse](https://www.papaparse.com) for CSV parsing
-- [Lucide React](https://lucide.dev) for icons
+Output goes to `dist/`.
 
 ## Deployment
 
-A GitHub Actions workflow (`.github/workflows/deploy.yml`) deploys to GitHub Pages on push to `main`. To enable, go to repository Settings > Pages and set Source to "GitHub Actions".
+This project includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically deploys to GitHub Pages on push to `main`. To enable:
+
+1. Go to your repository Settings > Pages
+2. Set Source to "GitHub Actions"
+3. Push to `main`
+
+## License
+
+Data sourced from publicly available University of Waterloo calendars.
