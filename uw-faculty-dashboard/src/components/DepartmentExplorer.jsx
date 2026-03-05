@@ -66,8 +66,24 @@ export default function DepartmentExplorer({ data }) {
       return dist;
     });
 
-    return { countByYear, deptPeople, rankDist, years };
+    return { countByYear, deptPeople, deptRows, rankDist, years };
   }, [dept, data]);
+
+  const selectedYear = pinnedData ? Number(pinnedData.year) : null;
+
+  const displayPeople = useMemo(() => {
+    if (!deptData) return [];
+    if (!selectedYear) return deptData.deptPeople;
+
+    // Find people active in this dept+year, with their rank that year
+    const yearRows = deptData.deptRows.filter(r => r.year === selectedYear);
+    const personRankMap = new Map();
+    yearRows.forEach(r => personRankMap.set(r.personId, r.rank));
+
+    return deptData.deptPeople
+      .filter(p => personRankMap.has(p.id))
+      .map(p => ({ ...p, yearRank: personRankMap.get(p.id) }));
+  }, [deptData, selectedYear]);
 
   const handleCountClick = useCallback(
     (d) => makeChartClickHandler(deptData?.countByYear || [], [{ key: 'count', name: 'Faculty', color: '#FFC107' }], setPinnedData)(d),
@@ -166,8 +182,10 @@ export default function DepartmentExplorer({ data }) {
               </div>
 
               <ChartCard
-                title={`Faculty in ${dept}`}
-                subtitle={`${deptData.deptPeople.length} people total`}
+                title={`Faculty in ${dept}${selectedYear ? ` (${selectedYear})` : ''}`}
+                subtitle={selectedYear
+                  ? `${displayPeople.length} faculty in ${selectedYear}–${String((selectedYear + 1) % 100).padStart(2, '0')}`
+                  : `${displayPeople.length} people total`}
               >
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -175,12 +193,14 @@ export default function DepartmentExplorer({ data }) {
                       <tr className="border-b border-uw-gray-200">
                         <th className="text-left py-2 pr-4 font-medium text-uw-gray-500">Name</th>
                         <th className="text-left py-2 pr-4 font-medium text-uw-gray-500">Years</th>
-                        <th className="text-left py-2 pr-4 font-medium text-uw-gray-500">Ranks</th>
+                        <th className="text-left py-2 pr-4 font-medium text-uw-gray-500">
+                          {selectedYear ? `Rank (${selectedYear})` : 'Ranks'}
+                        </th>
                         <th className="text-left py-2 font-medium text-uw-gray-500">Degree</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {deptData.deptPeople.map(person => (
+                      {displayPeople.map(person => (
                         <tr key={person.id} className="border-b border-uw-gray-100 hover:bg-uw-gray-100/50">
                           <td className="py-2 pr-4 font-medium text-uw-gray-900">
                             {person.displayName}
@@ -189,7 +209,9 @@ export default function DepartmentExplorer({ data }) {
                             {person.firstYear}–{person.lastYear}
                           </td>
                           <td className="py-2 pr-4 text-uw-gray-600">
-                            {person.ranks.join(', ')}
+                            {selectedYear && person.yearRank
+                              ? <span className="px-2 py-0.5 rounded text-xs bg-uw-gold/15 text-uw-gray-800">{person.yearRank}</span>
+                              : person.ranks.join(', ')}
                           </td>
                           <td className="py-2 text-uw-gray-600">
                             {person.highestDegree}
