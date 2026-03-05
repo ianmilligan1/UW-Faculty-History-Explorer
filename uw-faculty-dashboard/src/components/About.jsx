@@ -23,7 +23,15 @@ export default function About() {
               <span className="font-semibold text-uw-gray-900">Ryan Van Koughnett</span>, PhD
               Candidate in the Department of History. Each row represents a person-year entry
               recording faculty names, departments, ranks, degrees, and administrative roles as
-              published in the calendars.
+              published in the calendars. The original calendar PDFs are available in the{' '}
+              <a
+                href="https://academic-calendar-archive.uwaterloo.ca/undergraduate-studies/index.html"
+                className="text-uw-gold-dark hover:underline font-medium"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                UW Calendar Archive
+              </a>.
             </p>
           </div>
 
