@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend,
 } from 'recharts';
 import { Search } from 'lucide-react';
 import ChartCard from './ChartCard';
-import { getCalendarPdfUrl } from '../utils/calendarUrls';
+import SourceCalendarBanner from './SourceCalendarBanner';
+import { makeChartClickHandler } from '../utils/chartHelpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -19,15 +20,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         </p>
       ))}
       {year >= 1963 && year <= 1978 && (
-        <a
-          href={getCalendarPdfUrl(year)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-1.5 text-xs text-uw-gold-dark hover:underline"
-          onClick={e => e.stopPropagation()}
-        >
-          View source calendar →
-        </a>
+        <p className="mt-1.5 text-xs text-uw-gray-400 italic">Click for source calendar</p>
       )}
     </div>
   );
@@ -36,6 +29,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function DepartmentExplorer({ data }) {
   const [selectedDept, setSelectedDept] = useState('');
   const [deptSearch, setDeptSearch] = useState('');
+  const [pinnedData, setPinnedData] = useState(null);
 
   const filteredDepts = useMemo(() => {
     if (!deptSearch) return data.allDepartments;
@@ -51,20 +45,17 @@ export default function DepartmentExplorer({ data }) {
     const deptRows = data.rows.filter(r => r.department === dept);
     const years = [...new Set(deptRows.map(r => r.year))].sort((a, b) => a - b);
 
-    // Faculty count over time
     const countByYear = years.map(year => {
       const yearRows = deptRows.filter(r => r.year === year);
       const unique = new Set(yearRows.map(r => r.personId));
       return { year, count: unique.size };
     });
 
-    // People in this department
     const peopleIds = new Set(deptRows.map(r => r.personId));
     const deptPeople = data.people
       .filter(p => peopleIds.has(p.id))
       .sort((a, b) => a.firstYear - b.firstYear || a.lastname.localeCompare(b.lastname));
 
-    // Rank distribution over time
     const mainRanks = ['Lecturer', 'Assistant Professor', 'Associate Professor', 'Professor'];
     const rankDist = years.map(year => {
       const yearRows = deptRows.filter(r => r.year === year);
@@ -78,10 +69,23 @@ export default function DepartmentExplorer({ data }) {
     return { countByYear, deptPeople, rankDist, years };
   }, [dept, data]);
 
+  const handleCountClick = useCallback(
+    (d) => makeChartClickHandler(deptData?.countByYear || [], [{ key: 'count', name: 'Faculty', color: '#FFC107' }], setPinnedData)(d),
+    [deptData]
+  );
+  const handleRankClick = useCallback(
+    (d) => makeChartClickHandler(deptData?.rankDist || [], [
+      { key: 'Professor', name: 'Professor', color: '#1a1a1a' },
+      { key: 'Associate Professor', name: 'Associate Professor', color: '#FFD54F' },
+      { key: 'Assistant Professor', name: 'Assistant Professor', color: '#FFC107' },
+      { key: 'Lecturer', name: 'Lecturer', color: '#9e9e9e' },
+    ], setPinnedData)(d),
+    [deptData]
+  );
+
   return (
     <div className="space-y-6 mt-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Department selector */}
         <div className="lg:col-span-1">
           <ChartCard title="Departments">
             <div className="relative mb-3">
@@ -112,8 +116,9 @@ export default function DepartmentExplorer({ data }) {
           </ChartCard>
         </div>
 
-        {/* Department detail */}
         <div className="lg:col-span-3 space-y-6">
+          <SourceCalendarBanner data={pinnedData} onClose={() => setPinnedData(null)} />
+
           {deptData && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -122,7 +127,7 @@ export default function DepartmentExplorer({ data }) {
                   subtitle="Unique faculty per year"
                 >
                   <ResponsiveContainer width="100%" height={250}>
-                    <AreaChart data={deptData.countByYear}>
+                    <AreaChart data={deptData.countByYear} onClick={handleCountClick}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                       <XAxis dataKey="year" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
@@ -145,7 +150,7 @@ export default function DepartmentExplorer({ data }) {
                   subtitle="Faculty by rank over time"
                 >
                   <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={deptData.rankDist}>
+                    <BarChart data={deptData.rankDist} onClick={handleRankClick}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                       <XAxis dataKey="year" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />

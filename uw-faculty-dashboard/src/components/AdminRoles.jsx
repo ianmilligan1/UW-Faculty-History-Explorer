@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line,
 } from 'recharts';
 import ChartCard from './ChartCard';
-import { getCalendarPdfUrl } from '../utils/calendarUrls';
+import SourceCalendarBanner from './SourceCalendarBanner';
+import { makeChartClickHandler } from '../utils/chartHelpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -18,15 +19,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         </p>
       ))}
       {year >= 1963 && year <= 1978 && (
-        <a
-          href={getCalendarPdfUrl(year)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-1.5 text-xs text-uw-gold-dark hover:underline"
-          onClick={e => e.stopPropagation()}
-        >
-          View source calendar →
-        </a>
+        <p className="mt-1.5 text-xs text-uw-gray-400 italic">Click for source calendar</p>
       )}
     </div>
   );
@@ -34,8 +27,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AdminRoles({ data }) {
   const [roleFilter, setRoleFilter] = useState('All');
+  const [pinnedData, setPinnedData] = useState(null);
 
-  // All admin appointments
   const allAppointments = useMemo(() => {
     const appointments = [];
     data.people.forEach(person => {
@@ -55,19 +48,16 @@ export default function AdminRoles({ data }) {
     return appointments.sort((a, b) => a.year - b.year || a.role.localeCompare(b.role));
   }, [data]);
 
-  // Unique roles
   const allRoleTypes = useMemo(() => {
     const roles = new Set(allAppointments.map(a => a.role));
     return ['All', ...Array.from(roles).sort()];
   }, [allAppointments]);
 
-  // Filtered appointments
   const filtered = useMemo(() => {
     if (roleFilter === 'All') return allAppointments;
     return allAppointments.filter(a => a.role === roleFilter);
   }, [allAppointments, roleFilter]);
 
-  // Admin counts by year
   const adminByYear = useMemo(() => {
     return data.allYears.map(year => {
       const yearAppts = filtered.filter(a => a.year === year);
@@ -76,7 +66,11 @@ export default function AdminRoles({ data }) {
     });
   }, [data, filtered]);
 
-  // Role type distribution
+  const handleAdminClick = useCallback(
+    (d) => makeChartClickHandler(adminByYear, [{ key: 'people', name: 'People with admin roles', color: '#FFD54F' }], setPinnedData)(d),
+    [adminByYear]
+  );
+
   const roleDistribution = useMemo(() => {
     const counts = {};
     allAppointments.forEach(a => {
@@ -87,7 +81,6 @@ export default function AdminRoles({ data }) {
       .sort((a, b) => b.count - a.count);
   }, [allAppointments]);
 
-  // People with most admin years
   const topAdmins = useMemo(() => {
     const adminYears = {};
     allAppointments.forEach(a => {
@@ -111,7 +104,6 @@ export default function AdminRoles({ data }) {
       .slice(0, 20);
   }, [allAppointments]);
 
-  // Deduplicated appointments for the table
   const tableAppointments = useMemo(() => {
     const seen = new Map();
     filtered.forEach(a => {
@@ -135,6 +127,8 @@ export default function AdminRoles({ data }) {
 
   return (
     <div className="space-y-6 mt-6">
+      <SourceCalendarBanner data={pinnedData} onClose={() => setPinnedData(null)} />
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-uw-gray-200 p-5 text-center">
           <p className="text-3xl font-bold text-uw-gray-900">
@@ -169,7 +163,7 @@ export default function AdminRoles({ data }) {
             </select>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={adminByYear}>
+            <LineChart data={adminByYear} onClick={handleAdminClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />

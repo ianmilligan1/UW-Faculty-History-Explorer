@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend,
 } from 'recharts';
 import { Users, Building2, Calendar, TrendingUp } from 'lucide-react';
 import ChartCard from './ChartCard';
-import { getCalendarPdfUrl } from '../utils/calendarUrls';
+import SourceCalendarBanner from './SourceCalendarBanner';
+import { makeChartClickHandler } from '../utils/chartHelpers';
 
 function StatCard({ icon: Icon, label, value, sub }) {
   return (
@@ -36,15 +37,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         </p>
       ))}
       {year >= 1963 && year <= 1978 && (
-        <a
-          href={getCalendarPdfUrl(year)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-1.5 text-xs text-uw-gold-dark hover:underline"
-          onClick={e => e.stopPropagation()}
-        >
-          View source calendar →
-        </a>
+        <p className="mt-1.5 text-xs text-uw-gray-400 italic">Click for source calendar</p>
       )}
     </div>
   );
@@ -52,6 +45,25 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Overview({ data }) {
   const { stats, facultyByYear, deptsByYear, rankDistByYear } = data;
+  const [pinnedData, setPinnedData] = useState(null);
+
+  const handleGrowthClick = useCallback(
+    (d) => makeChartClickHandler(facultyByYear, [{ key: 'count', name: 'Faculty', color: '#FFC107' }], setPinnedData)(d),
+    [facultyByYear]
+  );
+  const handleDeptsClick = useCallback(
+    (d) => makeChartClickHandler(deptsByYear, [{ key: 'count', name: 'Departments', color: '#212121' }], setPinnedData)(d),
+    [deptsByYear]
+  );
+  const handleRankClick = useCallback(
+    (d) => makeChartClickHandler(rankDistByYear, [
+      { key: 'Professor', name: 'Professor', color: '#1a1a1a' },
+      { key: 'Associate Professor', name: 'Associate Professor', color: '#FFD54F' },
+      { key: 'Assistant Professor', name: 'Assistant Professor', color: '#FFC107' },
+      { key: 'Lecturer', name: 'Lecturer', color: '#9e9e9e' },
+    ], setPinnedData)(d),
+    [rankDistByYear]
+  );
 
   const growthRate = useMemo(() => {
     const first = facultyByYear[0]?.count || 1;
@@ -65,6 +77,8 @@ export default function Overview({ data }) {
 
   return (
     <div className="space-y-6 mt-6">
+      <SourceCalendarBanner data={pinnedData} onClose={() => setPinnedData(null)} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Users}
@@ -98,7 +112,7 @@ export default function Overview({ data }) {
           subtitle="Unique faculty members by academic year"
         >
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={facultyByYear}>
+            <AreaChart data={facultyByYear} onClick={handleGrowthClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
@@ -121,7 +135,7 @@ export default function Overview({ data }) {
           subtitle="Departments listed in calendars by year"
         >
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={deptsByYear}>
+            <AreaChart data={deptsByYear} onClick={handleDeptsClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
@@ -145,7 +159,7 @@ export default function Overview({ data }) {
         subtitle="Number of faculty at each academic rank per year"
       >
         <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={rankDistByYear}>
+          <BarChart data={rankDistByYear} onClick={handleRankClick}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis dataKey="year" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
