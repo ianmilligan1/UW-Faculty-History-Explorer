@@ -4,9 +4,11 @@ import {
   Legend, LineChart, Line, AreaChart, Area,
 } from 'recharts';
 import ChartCard from './ChartCard';
+import { getCalendarPdfUrl } from '../utils/calendarUrls';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const year = Number(label);
   return (
     <div className="bg-white border border-uw-gray-300 rounded-lg shadow-lg p-3 text-sm">
       <p className="font-semibold text-uw-gray-900 mb-1">{label}</p>
@@ -15,6 +17,17 @@ const CustomTooltip = ({ active, payload, label }) => {
           {entry.name}: <span className="font-medium">{entry.value}</span>
         </p>
       ))}
+      {year >= 1963 && year <= 1978 && (
+        <a
+          href={getCalendarPdfUrl(year)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-1.5 text-xs text-uw-gold-dark hover:underline"
+          onClick={e => e.stopPropagation()}
+        >
+          View source calendar →
+        </a>
+      )}
     </div>
   );
 };

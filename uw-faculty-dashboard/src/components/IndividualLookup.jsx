@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, User, Calendar, BookOpen, Award, Building2 } from 'lucide-react';
 import ChartCard from './ChartCard';
+import CalendarLink from './CalendarLink';
 
 const AFFILIATE_LABELS = {
   'J': 'St. Jerome\'s College',
@@ -182,7 +183,8 @@ export default function IndividualLookup({ data }) {
                     <th className="text-left py-2 pr-3 font-medium text-uw-gray-500">Department</th>
                     <th className="text-left py-2 pr-3 font-medium text-uw-gray-500">Rank</th>
                     <th className="text-left py-2 pr-3 font-medium text-uw-gray-500">Degree</th>
-                    <th className="text-left py-2 font-medium text-uw-gray-500">Notes</th>
+                    <th className="text-left py-2 pr-3 font-medium text-uw-gray-500">Notes</th>
+                    <th className="text-left py-2 font-medium text-uw-gray-500 w-14">Source</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,7 +197,7 @@ export default function IndividualLookup({ data }) {
                         {entry.degree}
                         {entry.location && <span className="text-uw-gray-400"> ({entry.location})</span>}
                       </td>
-                      <td className="py-2 text-uw-gray-500">
+                      <td className="py-2 pr-3 text-uw-gray-500">
                         {entry.other && (
                           <span className="text-xs px-2 py-0.5 rounded bg-uw-gray-100 text-uw-gray-600">
                             {entry.other}
@@ -206,6 +208,9 @@ export default function IndividualLookup({ data }) {
                             {AFFILIATE_LABELS[entry.affiliate] || entry.affiliate}
                           </span>
                         )}
+                      </td>
+                      <td className="py-2 text-center">
+                        <CalendarLink year={entry.year} />
                       </td>
                     </tr>
                   ))}
